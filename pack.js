@@ -35,7 +35,13 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'dataType' : 'json',
         // instead of defining a color array, I will set a color scale and then let the user overwrite it
         'colorRange' : [],
-        'chartType' : 'pack'
+        'chartType' : 'pack',
+        // defines the data structure of the document
+        'dataStructure' : {
+            'label' : 'name',
+            'children' : 'children',
+            'data' : 'size'
+        }
     };
     
     // plugin functions go here
@@ -87,6 +93,15 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
 
             container.data = data;
+
+            // I'll probably want to define the children function somewhere
+            // https://github.com/mbostock/d3/wiki/Pack-Layout#wiki-children
+            // name, children, size
+            // label, children, data
+            // returns the children element as defined by the options
+            function children(d) {
+                return d[container.opts.dataStructure.children];
+            }
 
             // Bubble code
             if (container.opts.chartType == 'bubble') {
