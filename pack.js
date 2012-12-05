@@ -34,7 +34,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'dataUrl' : 'flare.json',  // this is a url for a resource
         'dataType' : 'json',
         // instead of defining a color array, I will set a color scale and then let the user overwrite it
-        'colorRange' : []
+        'colorRange' : [],
+        'chartType' : 'pack'
     };
     
     // plugin functions go here
@@ -69,6 +70,12 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.data = data;
 
+            // this is the layout for the regular pack i.e. layered chart
+            container.pack = d3.layout.pack()
+                .size([container.diameter - 4, container.diameter - 4])
+                .value(function(d) { return d.size; });
+
+            // this is the layout for the bubble pack i.e. flat chart
             container.bubble = d3.layout.pack()
                 .sort(null)
                 .size([container.diameter, container.diameter])
@@ -78,56 +85,71 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             container.chart = d3.select(container.el).append("svg")
                 .attr("width", container.diameter)
                 .attr("height", container.diameter)
-                .attr("class", "bubble");
+                .attr("class", container.opts.chartType);
+                
 
-            container.node = container.chart.selectAll(".node")
-                .data(container.bubble.nodes(classes(data))
-                    .filter(function(d) { return !d.children; }))
-                .enter()
-                .append("g")
-                .attr("class", "node")
-                .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; });
-            
-            container.node.append("title")
-                .text(function(d) { return d.className + ": " + container.format(d.value); });
+            // Bubble code
+            if (container.opts.chartType == 'bubble') {
+                container.node = container.chart.selectAll(".node")
+                    .data(container.bubble.nodes(container.parseData(data))
+                        .filter(function(d) { return !d.children; }))
+                    .enter()
+                    .append("g")
+                    .attr("class", "node")
+                    .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; });
+                
+                container.node.append("title")
+                    .text(function(d) { return d.className + ": " + container.format(d.value); });
 
-            container.node.append("circle")
-                .attr("r", function(d) { return d.r; })
-                .style("fill", function(d) {console.log(d.packageName); return container.color(d.packageName); });
+                container.node.append("circle")
+                    .attr("r", function(d) { return d.r; })
+                    .style("fill", function(d) { return container.color(d.packageName); });
 
-            container.node.append("text")
-                .attr("dy", ".3em")
-                .style("text-anchor", "middle")
-                .text(function(d) { return d.className.substring(0, d.r / 3); });
-            
-            // add the X and Y axis
-            
-            container.chart.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + container.height + ")")
-                .call(container.xAxis);
+                container.node.append("text")
+                    .attr("dy", ".3em")
+                    .style("text-anchor", "middle")
+                    .text(function(d) { return d.className.substring(0, d.r / 3); });
+            }
+            // Pack code
+            else if (container.opts.chartType == 'pack') {
+                container.node = container.chart.datum(data).selectAll(".node")
+                    .data(container.pack.nodes)
+                    .enter().append("g")
+                    .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 
-            container.chart.append("g")
-                .attr("class", "y axis")
-                .call(container.yAxis);
+                container.node.append("title")
+                    .text(function(d) { return d.name + (d.children ? "" : ": " + container.format(d.size)); });
+
+                container.node.append("circle")
+                    .attr("r", function(d) { return d.r; });
+
+                container.node.filter(function(d) { return !d.children; }).append("text")
+                    .attr("dy", ".3em")
+                    .style("text-anchor", "middle")
+                    .text(function(d) { return d.name.substring(0, d.r / 3); });
+            }
             
-            // Returns a flattened hierarchy containing all leaf nodes under the root.
-            function classes(root) {
-                var classes = [];
+            
+
+        },
+        // Returns a flattened hierarchy containing all leaf nodes under the root.
+        parseData : function(data) {
+            console.log(data);
+            var dataList = [];
         
-                function recurse(name, node) {
-                    if (node.children) {
-                        node.children.forEach(function(child) { recurse(node.name, child); });
-                    }
-                    else {
-                        classes.push({packageName: name, className: node.name, value: node.size});
-                    }
-                };
-
-                recurse(null, root);
-                return {children: classes};  
+            function recurse(name, node) {
+                if (node.children) {
+                    node.children.forEach(function(child) { recurse(node.name, child); });
+                }
+                else {
+                    dataList.push({packageName: name, className: node.name, value: node.size});
+                }
             };
 
+            recurse(null, data);
+            console.log({children: dataList});
+            return {children: dataList};  
         },
         updateData : function() {
             var container = this,
@@ -139,14 +161,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // build the chart
                 container.buildChart(data);
             });
-        },
-        setData : function(num) {
-            var data = d3.range(num).map(function(i) {
-                return {x: i / (num-1), y: (Math.sin(i / 2) + 2) / 4};
-            });
-            this.data = data;
-            // build the chart with the data
-            this.buildChart(container.data);
         },
         settings : function(settings) {
             // I need to sort out whether I want to refresh the graph when the settings are changed
