@@ -32,7 +32,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'padding': 2,
         'data' : null,  // I'll need to figure out how I want to present data options to the user
         'dataUrl' : 'flare.json',  // this is a url for a resource
-        'dataType' : 'json'
+        'dataType' : 'json',
+        // instead of defining a color array, I will set a color scale and then let the user overwrite it
+        'colorRange' : []
     };
     
     // plugin functions go here
@@ -43,7 +45,12 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.diameter = this.opts.diameter,
             container.format = d3.format(",d");
-            container.color = d3.scale.category20();
+            if (this.opts.colorRange.length > 0) {
+                container.color = d3.scale.ordinal().range(this.opts.colorRange);
+            }
+            else {
+                container.color = d3.scale.category20();
+            }
 
             // define the data for the graph
             if (typeof this.opts.dataUrl == "string") {

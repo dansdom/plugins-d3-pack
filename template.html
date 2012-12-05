@@ -12,11 +12,20 @@
     <div id="chart2"></div>
     <script type="text/javascript">
 
-      var charts = document.getElementsByTagName("div");
+      var chart1 = document.getElementById("chart1");
+      var chart2 = document.getElementById("chart2");
 
-      d3.pack(charts, {
-        'diameter': 400,
+      d3.pack(chart1, {
+        'diameter': 300,
         'padding': 2,
+        'dataUrl' : 'flare.json',
+        'dataType' : 'json',
+        'colorRange' : [d3.rgb(100, 20, 30), d3.rgb(40, 150, 60), d3.rgb(70, 180, 190), d3.rgb(140, 150, 60), d3.rgb(40, 150, 160), d3.rgb(240, 150, 60)]
+      });
+
+      d3.pack(chart2, {
+        'diameter': 500,
+        'padding': 10,
         'dataUrl' : 'flare.json',
         'dataType' : 'json'
       });
