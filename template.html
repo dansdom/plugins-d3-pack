@@ -10,10 +10,12 @@
   <body>
     <div id="chart1"></div>
     <div id="chart2"></div>
+    <div id="chart3"></div>
     <script type="text/javascript">
 
       var chart1 = document.getElementById("chart1");
       var chart2 = document.getElementById("chart2");
+      var chart3 = document.getElementById("chart3");
 
       d3.pack(chart1, {
         'diameter': 500,
@@ -30,6 +32,14 @@
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
         'chartType' : 'pack'
+      });
+
+      d3.pack(chart3, {
+        'diameter': 250,
+        'padding': 2,
+        'dataUrl' : 'flare.json',
+        'dataType' : 'json',
+        'chartType' : 'bubble'
       });
 
     </script>
