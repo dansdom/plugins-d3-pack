@@ -32,7 +32,7 @@ div {
 
 .pack circle {
   fill: rgb(31, 119, 180);
-  fill-opacity: .25;
+  fill-opacity: .15;
   stroke: rgb(31, 119, 180);
   stroke-width: 1px;
 }

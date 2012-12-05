@@ -53,6 +53,24 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.color = d3.scale.category20();
             }
 
+            // define the two layouts
+            // this is the layout for the regular pack i.e. layered chart
+            container.pack = d3.layout.pack()
+                .size([container.diameter - 4, container.diameter - 4])
+                .value(function(d) { return d.size; });
+
+            // this is the layout for the bubble pack i.e. flat chart
+            container.bubble = d3.layout.pack()
+                .sort(null)
+                .size([container.diameter, container.diameter])
+                .padding(1.5);
+
+            // create the svg element that holds the chart
+            container.chart = d3.select(container.el).append("svg")
+                .attr("width", container.diameter)
+                .attr("height", container.diameter)
+                .attr("class", container.opts.chartType);
+
             // define the data for the graph
             if (typeof this.opts.dataUrl == "string") {
                 // go get the data
@@ -70,33 +88,15 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.data = data;
 
-            // this is the layout for the regular pack i.e. layered chart
-            container.pack = d3.layout.pack()
-                .size([container.diameter - 4, container.diameter - 4])
-                .value(function(d) { return d.size; });
-
-            // this is the layout for the bubble pack i.e. flat chart
-            container.bubble = d3.layout.pack()
-                .sort(null)
-                .size([container.diameter, container.diameter])
-                .padding(1.5);
-
-            // create the svg element that holds the chart
-            container.chart = d3.select(container.el).append("svg")
-                .attr("width", container.diameter)
-                .attr("height", container.diameter)
-                .attr("class", container.opts.chartType);
-                
-
             // Bubble code
             if (container.opts.chartType == 'bubble') {
                 container.node = container.chart.selectAll(".node")
                     .data(container.bubble.nodes(container.parseData(data))
                         .filter(function(d) { return !d.children; }))
-                    .enter()
-                    .append("g")
-                    .attr("class", "node")
-                    .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; });
+                  .enter().append("g")
+                    .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", "node");
+                    
                 
                 container.node.append("title")
                     .text(function(d) { return d.className + ": " + container.format(d.value); });
@@ -114,12 +114,26 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             else if (container.opts.chartType == 'pack') {
                 container.node = container.chart.datum(data).selectAll(".node")
                     .data(container.pack.nodes)
-                    .enter().append("g")
-                    .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
-                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
+                  .enter().append("g")
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", function(d) {
+                        if (d.children) {
+                            return "node";
+                        }
+                        else {
+                            return "leaf node";
+                        } 
+                    });
+                    
                 container.node.append("title")
-                    .text(function(d) { return d.name + (d.children ? "" : ": " + container.format(d.size)); });
+                    .text(function(d) {
+                        if (d.children) {
+                            return d.name;
+                        }
+                        else {
+                            return d.name + ": " + container.format(d.size);
+                        }
+                    });
 
                 container.node.append("circle")
                     .attr("r", function(d) { return d.r; });
@@ -130,8 +144,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .text(function(d) { return d.name.substring(0, d.r / 3); });
             }
             
-            
-
         },
         // Returns a flattened hierarchy containing all leaf nodes under the root.
         parseData : function(data) {
