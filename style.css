@@ -1,6 +1,9 @@
 body {
   font: 10px sans-serif;
 }
+div {
+    float:left;
+}
 
 .bar rect {
   fill: steelblue;

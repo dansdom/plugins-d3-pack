@@ -43,29 +43,24 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.diameter = this.opts.diameter,
             container.format = d3.format(",d");
-            container.color = d3.scale.category20c();
+            container.color = d3.scale.category20();
 
             // define the data for the graph
             if (typeof this.opts.dataUrl == "string") {
                 // go get the data
-                //this.getData(this.opts.dataUrl, this.opts.dataType);
+                this.getData(this.opts.dataUrl, this.opts.dataType);
             }
             else {
                 // just going to set data from the opts object
                 //this.setData(this.opts.data);
             }
-            // define the scales and axis
-            //this.setScale();
-            //this.setAxis();
-            d3.json("flare.json", function(error, root) {
-                console.log(error);
-                console.log(root);
-            });
 
         },
         buildChart : function(data) {
 
             var container = this;
+
+            container.data = data;
 
             container.bubble = d3.layout.pack()
                 .sort(null)
@@ -79,16 +74,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .attr("class", "bubble");
 
             container.node = container.chart.selectAll(".node")
-                .data(container.bubble.nodes('some function'))
-                .filter(function(d) {return !d.children;});
-            /*    
-            container.node.enter()
+                .data(container.bubble.nodes(classes(data))
+                    .filter(function(d) { return !d.children; }))
+                .enter()
                 .append("g")
                 .attr("class", "node")
                 .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; });
-            */
+            
+            container.node.append("title")
+                .text(function(d) { return d.className + ": " + container.format(d.value); });
+
+            container.node.append("circle")
+                .attr("r", function(d) { return d.r; })
+                .style("fill", function(d) {console.log(d.packageName); return container.color(d.packageName); });
+
+            container.node.append("text")
+                .attr("dy", ".3em")
+                .style("text-anchor", "middle")
+                .text(function(d) { return d.className.substring(0, d.r / 3); });
+            
             // add the X and Y axis
-            /*
+            
             container.chart.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + container.height + ")")
@@ -97,7 +103,24 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             container.chart.append("g")
                 .attr("class", "y axis")
                 .call(container.yAxis);
-            */
+            
+            // Returns a flattened hierarchy containing all leaf nodes under the root.
+            function classes(root) {
+                var classes = [];
+        
+                function recurse(name, node) {
+                    if (node.children) {
+                        node.children.forEach(function(child) { recurse(node.name, child); });
+                    }
+                    else {
+                        classes.push({packageName: name, className: node.name, value: node.size});
+                    }
+                };
+
+                recurse(null, root);
+                return {children: classes};  
+            };
+
         },
         updateData : function() {
             var container = this,
@@ -105,11 +128,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         },
         getData : function(url, type) {
             var container = this;
-            d3.json(url, function(error, root) {
+            d3.json(url, function(error, data) {
                 // build the chart
-                console.log(error);
-                console.log(root);
-                container.buildChart(root);
+                container.buildChart(data);
             });
         },
         setData : function(num) {
@@ -119,24 +140,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             this.data = data;
             // build the chart with the data
             this.buildChart(container.data);
-        },
-        setScale : function(width, height) {
-            this.xScale = d3.scale.linear()
-                .domain([0, 1])
-                .range([0, this.width]);
-
-            this.yScale = d3.scale.linear()
-                .domain([0, 1])
-                .range([this.height, 0]);
-        },
-        setAxis : function() {
-            this.xAxis = d3.svg.axis()
-                .scale(this.xScale)
-                .orient("bottom");
-
-            this.yAxis = d3.svg.axis()
-                .scale(this.yScale)
-                .orient("left");
         },
         settings : function(settings) {
             // I need to sort out whether I want to refresh the graph when the settings are changed
