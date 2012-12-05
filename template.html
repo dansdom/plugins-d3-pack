@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>Bar Chart</title>
     <script type="text/javascript" src="d3.v2.js"></script>
-    <script type="text/javascript" src="template.js"></script>
+    <script type="text/javascript" src="pack.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -14,9 +14,11 @@
 
       var charts = document.getElementsByTagName("div");
 
-      d3.testPlugin(charts, {
-        'height': 250,
-        'width': 900
+      d3.pack(charts, {
+        'diameter': 500,
+        'padding': 2,
+        'dataUrl' : 'flare.json',
+        'dataType' : 'json'
       });
 
     </script>
