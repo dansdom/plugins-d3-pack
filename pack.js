@@ -38,9 +38,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'chartType' : 'pack',
         // defines the data structure of the document
         'dataStructure' : {
-            'label' : 'name',
-            'children' : 'children',
-            'data' : 'size'
+            'name' : 'name1',
+            'children' : 'whatever',
+            'value' : 'size'
         }
     };
     
@@ -62,14 +62,18 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // define the two layouts
             // this is the layout for the regular pack i.e. layered chart
             container.pack = d3.layout.pack()
-                .size([container.diameter - 4, container.diameter - 4])
-                .value(function(d) { return d.size; });
+                .size([container.diameter, container.diameter])
+                // custom size function as passed into the options object
+                .value(function(d) { return d[container.opts.dataStructure.value]})
+                // custom children function as passed into the options object
+                .children(function(d) { return d[container.opts.dataStructure.children]})
+                .padding(container.opts.padding);
 
             // this is the layout for the bubble pack i.e. flat chart
             container.bubble = d3.layout.pack()
                 .sort(null)
                 .size([container.diameter, container.diameter])
-                .padding(1.5);
+                .padding(container.opts.padding);
 
             // create the svg element that holds the chart
             container.chart = d3.select(container.el).append("svg")
@@ -98,10 +102,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // https://github.com/mbostock/d3/wiki/Pack-Layout#wiki-children
             // name, children, size
             // label, children, data
-            // returns the children element as defined by the options
-            function children(d) {
-                return d[container.opts.dataStructure.children];
-            }
+            
 
             // Bubble code
             if (container.opts.chartType == 'bubble') {
@@ -109,7 +110,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .data(container.bubble.nodes(container.parseData(data))
                         .filter(function(d) { return !d.children; }))
                   .enter().append("g")
-                    .attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("transform", function(d) {console.log(d);return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", "node");
                     
                 
@@ -143,10 +144,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.node.append("title")
                     .text(function(d) {
                         if (d.children) {
-                            return d.name;
+                            return d[container.opts.dataStructure.name];
                         }
                         else {
-                            return d.name + ": " + container.format(d.size);
+                            return d[container.opts.dataStructure.name] + ": " + container.format(d.size);
                         }
                     });
 
@@ -156,26 +157,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.node.filter(function(d) { return !d.children; }).append("text")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
-                    .text(function(d) { return d.name.substring(0, d.r / 3); });
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 3); });
             }
             
         },
         // Returns a flattened hierarchy containing all leaf nodes under the root.
         parseData : function(data) {
-            console.log(data);
-            var dataList = [];
+           
+            var dataList = [],
+                children = this.opts.dataStructure.children,
+                container = this;
         
             function recurse(name, node) {
-                if (node.children) {
-                    node.children.forEach(function(child) { recurse(node.name, child); });
+                if (node[children]) {
+                    node[children].forEach(function(child) { recurse(node[container.opts.dataStructure.name], child); });
                 }
                 else {
-                    dataList.push({packageName: name, className: node.name, value: node.size});
+                    dataList.push({packageName: name, className: node[container.opts.dataStructure.name], value: node.size});
                 }
             };
 
             recurse(null, data);
-            console.log({children: dataList});
             return {children: dataList};  
         },
         updateData : function() {
