@@ -174,6 +174,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .duration(3000)
                     .attr("r", function(d) { return d.r; })
                     .style("fill", function(d) { return container.color(d.packageName); }); 
+
+                container.node.select("text")
+                    .transition()
+                    .delay(1500)
+                    .text(function(d) { console.log('cutting string'); return d.className.substring(0, d.r / 3); })   
                 
                   
                 var oldNodes = container.node.exit()
@@ -199,11 +204,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 newNodes
                     .append("text")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
                     .transition()
                     .delay(3000)
-                    .style("text-anchor", "middle")
                     .text(function(d) { return d.className.substring(0, d.r / 3); })
-                    .attr("dy", ".3em");     
             }
             else if (container.opts.chartType == 'pack') {
             }
