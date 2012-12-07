@@ -21,7 +21,7 @@
       var chart3 = document.getElementById("chart3");
 
       d3.pack(chart1, {
-        'diameter': 900,
+        'diameter': 500,
         'padding': 1,
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
@@ -46,18 +46,15 @@
       });
 
       function updateChart1() {
-        console.log('updating chart');
-        d3.pack(chart1, "updateData", "flare3.json");
+        d3.pack(chart2, "updateData", "flare3.json");
       };
 
       function updateChart1a() {
-        console.log('updating chart');
-        d3.pack(chart1, "updateData", "flare4.json");
+        d3.pack(chart2, "updateData", "flare4.json");
       };
 
       function updateChart1b() {
-        console.log('updating chart');
-        d3.pack(chart1, "updateData", "flare.json");
+        d3.pack(chart2, "updateData", "flare.json");
       };
       
 

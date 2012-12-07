@@ -49,9 +49,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         init : function() {
 
             var container = this;
-
-            container.diameter = this.opts.diameter,
+            // define the size of the chart
+            container.diameter = this.opts.diameter;
+            // define the data format - not 100% sure what this does. will need to research this attribute
             container.format = d3.format(",d");
+            // if there is a colour range defined for this chart then use the settings. If not, use the inbuild category20 colour range
             if (this.opts.colorRange.length > 0) {
                 container.color = d3.scale.ordinal().range(this.opts.colorRange);
             }
@@ -59,7 +61,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.color = d3.scale.category20();
             }
 
-            // define the two layouts
+            // DEFINE EACH OF THE TWO TYPES OF LAYOUTS
             // this is the layout for the regular pack i.e. layered chart
             container.pack = d3.layout.pack()
                 .size([container.diameter, container.diameter])
@@ -97,8 +99,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
             container.data = data;
 
-            // Bubble code
+            // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
+
+                // define the data set and then append the g nodes for the data
                 container.node = container.chart.selectAll(".node")
                     .data(container.bubble.nodes(container.parseData(data))
                         .filter(function(d) { return !d.children; }))
@@ -106,21 +110,26 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", "node");
                     
-                
+                // add the title nodes for each data point
                 container.node.append("title")
                     .text(function(d) { return d.className + ": " + container.format(d.value); });
 
+                // add the circles for each data point. Color is dependent on the class name of the package
                 container.node.append("circle")
                     .attr("r", function(d) { return d.r; })
                     .style("fill", function(d) { return container.color(d.packageName); });
 
+                // add the text node for each data point and cut it depending on the size of the node
                 container.node.append("text")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
-                    .text(function(d) { return d.className.substring(0, d.r / 3); });
+                    .text(function(d) { return d.className.substring(0, d.r / 4); });
             }
-            // Pack code
+            // if type = Pack (i.e. deep representation)
             else if (container.opts.chartType == 'pack') {
+
+                // define the data set and then append the g nodes for the data
+                // add class depending on if the node has children 
                 container.node = container.chart.datum(data).selectAll(".node")
                     .data(container.pack.nodes)
                   .enter().append("g")
@@ -133,7 +142,109 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                             return "leaf node";
                         } 
                     });
+
+                // for each node add the title    
+                container.node.append("title")
+                    .text(function(d) {
+                        if (d.children) {
+                            return d[container.opts.dataStructure.name];
+                        }
+                        else {
+                            return d[container.opts.dataStructure.name] + ": " + container.format(d.size);
+                        }
+                    });
+
+                // add a circle for each data point
+                container.node.append("circle")
+                    .attr("r", function(d) { return d.r; });
+
+                // add the text node for each data point and cut it depending on the size of the node
+                container.node.filter(function(d) { return !d.children; }).append("text")
+                    .attr("dy", ".3em")
+                    .style("text-anchor", "middle")
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
+            }
+            
+        },
+        updateChart : function(data) {
+
+            var container = this;
+            container.data = data;
+
+            if (container.opts.chartType == 'bubble') {
+
+                // go in and select the nodes
+                container.node = container.chart.selectAll(".node")
+                    .data(container.bubble.nodes(container.parseData(data))
+                        .filter(function(d) { return !d.children; }));
                     
+                // set the transition of the existing nodes
+                container.node.transition()
+                    .duration(3000)
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+                // for existing nodes, select the circle and do the transition for them
+                container.node.select("circle")
+                .transition()
+                .duration(3000)
+                    .attr("r", function(d) { return d.r; })
+                    .style("fill", function(d) { return container.color(d.packageName); }); 
+
+                // for existing nodes, select the text and then transition them in
+                container.node.select("text")
+                    .transition()
+                    .delay(1500)
+                    .text(function(d) { return d.className.substring(0, d.r / 4); }); 
+                
+                // define the old nodes that don't exist and then fade them out  
+                var oldNodes = container.node.exit()
+                    .transition()
+                    .duration(3000)
+                    .style("fill-opacity", 1e-6)
+                    .remove();
+                
+                // define the new nodes and then move them into the correct place
+                var newNodes = container.node.enter()
+                    .append("g")
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", "node");
+                    
+                // for the new nodes add the4 title for them
+                newNodes.append("title")
+                        .text(function(d) { return d.className + ": " + container.format(d.value); });
+
+                // for the new nodes, append the circles and then fade them in
+                newNodes.append("circle")
+                        .attr("r", 0)
+                        .transition()
+                        .duration(3000)
+                        .attr("r", function(d) { return d.r; })
+                        .style("fill", function(d) { return container.color(d.packageName); });
+
+                // for the new nodes, append the text and them shorten it after the delay that equals the transition
+                newNodes
+                    .append("text")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition()
+                    .delay(3000)
+                    .text(function(d) { return d.className.substring(0, d.r / 3); });
+            }
+            else if (container.opts.chartType == 'pack') {
+                container.node = container.chart.datum(data).selectAll(".node")
+                    .data(container.pack.nodes);
+
+                container.node.enter().append("g")
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", function(d) {
+                        if (d.children) {
+                            return "node";
+                        }
+                        else {
+                            return "leaf node";
+                        } 
+                    });
+
                 container.node.append("title")
                     .text(function(d) {
                         if (d.children) {
@@ -150,67 +261,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.node.filter(function(d) { return !d.children; }).append("text")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
-                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 3); });
-            }
-            
-        },
-        updateChart : function(data) {
-
-            var container = this;
-            container.data = data;
-
-            if (container.opts.chartType == 'bubble') {
-
-                container.node = container.chart.selectAll(".node")
-                    .data(container.bubble.nodes(container.parseData(data))
-                        .filter(function(d) { return !d.children; }));
-                    
-                container.node.transition()
-                    .duration(3000)
-                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
-                container.node.select("circle")
-                .transition()
-                .duration(3000)
-                    .attr("r", function(d) { return d.r; })
-                    .style("fill", function(d) { return container.color(d.packageName); }); 
-
-                container.node.select("text")
-                    .transition()
-                    .delay(1500)
-                    .text(function(d) { console.log('cutting string'); return d.className.substring(0, d.r / 3); })   
-                
-                  
-                var oldNodes = container.node.exit()
-                    .transition()
-                    .duration(3000)
-                    .style("fill-opacity", 1e-6)
-                    .remove();
-                
-                var newNodes = container.node.enter()
-                    .append("g")
-                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-                    .attr("class", "node")
-                    
-                newNodes.append("title")
-                        .text(function(d) { return d.className + ": " + container.format(d.value); });
-
-                newNodes.append("circle")
-                        .attr("r", 0)
-                        .transition()
-                        .duration(3000)
-                        .attr("r", function(d) { return d.r; })
-                        .style("fill", function(d) { return container.color(d.packageName); });
-
-                newNodes
-                    .append("text")
-                    .style("text-anchor", "middle")
-                    .attr("dy", ".3em")
-                    .transition()
-                    .delay(3000)
-                    .text(function(d) { return d.className.substring(0, d.r / 3); })
-            }
-            else if (container.opts.chartType == 'pack') {
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
             }
 
         },
@@ -222,6 +273,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container = this;
         
             function recurse(name, node) {
+                console.log(name + ", " + node)
                 if (node[children]) {
                     node[children].forEach(function(child) { recurse(node[container.opts.dataStructure.name], child); });
                 }
@@ -233,6 +285,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             recurse(null, data);
             return {children: dataList};  
         },
+        // updates the data set for the chart
         updateData : function(url, type) {
             var container = this,
                 data = container.data;
@@ -241,6 +294,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.updateChart(data);
             });
         },
+        // gets data from a JSON request
         getData : function(url, type) {
             var container = this;
             d3.json(url, function(error, data) {
@@ -248,12 +302,14 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.buildChart(data);
             });
         },
+        // updates the settings of the chart
         settings : function(settings) {
             // I need to sort out whether I want to refresh the graph when the settings are changed
             this.opts = Extend(true, {}, this.opts, settings);
             // will make custom function to handle setting changes
             this.applySettings();
         },
+        // kills the chart
         destroy : function() {
             this.el.removeAttribute(this.namespace);
             this.el.removeChild(this.el.children[0]);
