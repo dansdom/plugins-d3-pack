@@ -38,8 +38,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'chartType' : 'pack',
         // defines the data structure of the document
         'dataStructure' : {
-            'name' : 'name1',
-            'children' : 'whatever',
+            'name' : 'name',
+            'children' : 'group',
             'value' : 'size'
         }
     };
@@ -95,14 +95,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         buildChart : function(data) {
 
             var container = this;
-
             container.data = data;
-
-            // I'll probably want to define the children function somewhere
-            // https://github.com/mbostock/d3/wiki/Pack-Layout#wiki-children
-            // name, children, size
-            // label, children, data
-            
 
             // Bubble code
             if (container.opts.chartType == 'bubble') {
@@ -110,7 +103,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .data(container.bubble.nodes(container.parseData(data))
                         .filter(function(d) { return !d.children; }))
                   .enter().append("g")
-                    .attr("transform", function(d) {console.log(d);return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", "node");
                     
                 
@@ -161,6 +154,61 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             }
             
         },
+        updateChart : function(data) {
+
+            var container = this;
+            container.data = data;
+
+            if (container.opts.chartType == 'bubble') {
+
+                container.node = container.chart.selectAll(".node")
+                    .data(container.bubble.nodes(container.parseData(data))
+                        .filter(function(d) { return !d.children; }));
+                    
+                container.node.transition()
+                    .duration(3000)
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+                container.node.select("circle")
+                .transition()
+                .duration(3000)
+                    .attr("r", function(d) { return d.r; })
+                    .style("fill", function(d) { return container.color(d.packageName); }); 
+                
+                  
+                var oldNodes = container.node.exit()
+                    .transition()
+                    .duration(3000)
+                    .style("fill-opacity", 1e-6)
+                    .remove();
+                
+                var newNodes = container.node.enter()
+                    .append("g")
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", "node")
+                    
+                newNodes.append("title")
+                        .text(function(d) { return d.className + ": " + container.format(d.value); });
+
+                newNodes.append("circle")
+                        .attr("r", 0)
+                        .transition()
+                        .duration(3000)
+                        .attr("r", function(d) { return d.r; })
+                        .style("fill", function(d) { return container.color(d.packageName); });
+
+                newNodes
+                    .append("text")
+                    .transition()
+                    .delay(3000)
+                    .style("text-anchor", "middle")
+                    .text(function(d) { return d.className.substring(0, d.r / 3); })
+                    .attr("dy", ".3em");     
+            }
+            else if (container.opts.chartType == 'pack') {
+            }
+
+        },
         // Returns a flattened hierarchy containing all leaf nodes under the root.
         parseData : function(data) {
            
@@ -180,9 +228,13 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             recurse(null, data);
             return {children: dataList};  
         },
-        updateData : function() {
+        updateData : function(url, type) {
             var container = this,
-                data = container.data;     
+                data = container.data;
+
+            d3.json(url, function(error, data) {
+                container.updateChart(data);
+            });
         },
         getData : function(url, type) {
             var container = this;
