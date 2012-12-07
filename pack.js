@@ -171,6 +171,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
             container.data = data;
 
+            // bubble chart update - shallow data
             if (container.opts.chartType == 'bubble') {
 
                 // go in and select the nodes
@@ -230,6 +231,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .delay(3000)
                     .text(function(d) { return d.className.substring(0, d.r / 3); });
             }
+            // pack chart update - nested data
+            // #### AT THE MOMENT THIS IS JUST THE BUILDER FUNCTION ####
             else if (container.opts.chartType == 'pack') {
                 container.node = container.chart.datum(data).selectAll(".node")
                     .data(container.pack.nodes);
@@ -272,8 +275,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 children = this.opts.dataStructure.children,
                 container = this;
         
+            // recursively loop through each child of the object
             function recurse(name, node) {
-                console.log(name + ", " + node)
                 if (node[children]) {
                     node[children].forEach(function(child) { recurse(node[container.opts.dataStructure.name], child); });
                 }
