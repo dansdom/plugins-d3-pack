@@ -234,10 +234,60 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // pack chart update - nested data
             // #### AT THE MOMENT THIS IS JUST THE BUILDER FUNCTION ####
             else if (container.opts.chartType == 'pack') {
+                // go in and select the nodes
                 container.node = container.chart.datum(data).selectAll(".node")
                     .data(container.pack.nodes);
 
-                container.node.enter().append("g")
+                // set the transition of the existing nodes
+                container.node.transition()
+                    .duration(3000)
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("class", function(d) {
+                        if (d.children) {
+                            return "node";
+                        }
+                        else {
+                            return "leaf node";
+                        } 
+                    });
+                    
+                container.node.select("circle").transition()
+                    .duration(3000)
+                    .attr("r", function(d) { return d.r; });
+
+
+                container.node.select("text").remove();
+                container.node.filter(function(d) { return !d.children; }).append("text")
+                    .attr("dy", ".3em")
+                    .style("text-anchor", "middle")
+                    .transition()
+                    .delay(3000)
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
+
+                // define the old nodes that don't exist and then fade them out  
+                var oldNodes = container.node.exit();
+
+                oldNodes.select("circle")
+                    .transition()
+                    .duration(3000)
+                    .style("fill-opacity", 1e-6)
+                    .style("stroke-opacity", 1e-6)
+                    .remove();
+
+                oldNodes.select("title")
+                    .transition()
+                    .duration(3000)
+                    .remove();
+
+                oldNodes.select("text")
+                    .transition()
+                    .duration(1000)
+                    .remove();
+
+                oldNodes.transition().duration(3000).remove();
+
+                var newNodes = container.node.enter()
+                    .append("g")
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", function(d) {
                         if (d.children) {
@@ -248,6 +298,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         } 
                     });
 
+                newNodes.append("circle")
+                    .attr("r", 0)
+                    .transition()
+                    .duration(3000)
+                    .attr("r", function(d) { return d.r; });
+
+                newNodes.filter(function(d) { return !d.children; })
+                    .append("text")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition()
+                    .delay(3000)
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); })
+                    
+                    
+                    
+                    
+                    
+
+
+                /*
                 container.node.append("title")
                     .text(function(d) {
                         if (d.children) {
@@ -265,6 +336,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
+                */
             }
 
         },

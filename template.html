@@ -8,9 +8,10 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <button onclick="updateChart1()">update chart 1</button>
-    <button onclick="updateChart1a()">update chart 1</button>
-    <button onclick="updateChart1b()">update chart 1</button>
+    <button onclick="updateChartA()">Data 1</button>
+    <button onclick="updateChartB()">Data 2</button>
+    <button onclick="updateChartC()">Data 3</button>
+    <button onclick="updateChartD()">Data 4</button>
     <div id="chart1"></div>
     <div id="chart2"></div>
     <div id="chart3"></div>
@@ -21,7 +22,7 @@
       var chart3 = document.getElementById("chart3");
 
       d3.pack(chart1, {
-        'diameter': 500,
+        'diameter': 100,
         'padding': 1,
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
@@ -30,7 +31,7 @@
       });
 
       d3.pack(chart2, {
-        'diameter': 500,
+        'diameter': 1000,
         'padding': 2,
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
@@ -38,23 +39,27 @@
       });
 
       d3.pack(chart3, {
-        'diameter': 250,
+        'diameter': 100,
         'padding': 5,
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
         'chartType' : 'bubble'
       });
 
-      function updateChart1() {
-        d3.pack(chart1, "updateData", "flare3.json");
+      function updateChartA() {
+        d3.pack(chart2, "updateData", "flare.json");
       };
 
-      function updateChart1a() {
-        d3.pack(chart1, "updateData", "flare4.json");
+      function updateChartB() {
+        d3.pack(chart2, "updateData", "flare2.json");
       };
 
-      function updateChart1b() {
-        d3.pack(chart1, "updateData", "flare.json");
+      function updateChartC() {
+        d3.pack(chart2, "updateData", "flare3.json");
+      };
+
+      function updateChartD() {
+        d3.pack(chart2, "updateData", "flare4.json");
       };
       
 
