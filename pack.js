@@ -51,6 +51,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
             // define the size of the chart
             container.diameter = this.opts.diameter;
+            // set the scale for the chart
+            container.scaleX = d3.scale.linear().range([0, container.diameter]);
+            container.scaleY = d3.scale.linear().range([0, container.diameter]);
             // define the data format - not 100% sure what this does. will need to research this attribute
             container.format = d3.format(",d");
             // if there is a colour range defined for this chart then use the settings. If not, use the inbuild category20 colour range
@@ -96,8 +99,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         },
         buildChart : function(data) {
 
-            var container = this;
+            var container = this,
+                initialDataSet = data;
+
             container.data = data;
+
 
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
@@ -117,7 +123,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // add the circles for each data point. Color is dependent on the class name of the package
                 container.node.append("circle")
                     .attr("r", function(d) { return d.r; })
-                    .style("fill", function(d) { return container.color(d.packageName); });
+                    .style("fill", function(d) { return container.color(d.packageName); })
+                    // add event handling for the circles
+                    .on("click", function() {
+                        container.zoom(d);
+                    });
 
                 // add the text node for each data point and cut it depending on the size of the node
                 container.node.append("text")
@@ -156,7 +166,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 // add a circle for each data point
                 container.node.append("circle")
-                    .attr("r", function(d) { return d.r; });
+                    .attr("r", function(d) { return d.r; })
+                    .on("click", function(d) {
+                        container.zoom(d);
+                    });
 
                 // add the text node for each data point and cut it depending on the size of the node
                 container.node.filter(function(d) { return !d.children; }).append("text")
@@ -164,6 +177,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("text-anchor", "middle")
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
             }
+
+            // if the window is clicked then the chart will reset to the initial zoom
+            //d3.select(window).on("click", function() {
+            //    container.zoom(initialDataSet);
+            //});
             
         },
         updateChart : function(data) {
@@ -313,6 +331,21 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     
             }
 
+        },
+        zoom : function(d, i) {
+
+            var container = this,
+                scaleFactor = (container.diameter - 5) / d.r / 2,
+                chart = container.chart.selectAll("g").transition().duration(2000),
+                leftPos = (d.x - d.r),
+                topPos = -(d.y - d.r);
+
+            chart.attr("transform", function(d) { 
+                return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
+            });
+
+            // stops the propagation of the event
+            d3.event.stopPropagation();
         },
         // Returns a flattened hierarchy containing all leaf nodes under the root.
         parseData : function(data) {

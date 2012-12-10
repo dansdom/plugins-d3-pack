@@ -42,6 +42,46 @@
    ]
   },
   {
+   "name": "extras",
+   "group": [
+    {
+     "name": "cluster3",
+     "group": [
+      {"name": "AgglomerativeCluster", "size": 13938},
+      {"name": "CommunityStructure", "size": 13812},
+      {"name": "HierarchicalCluster", "size": 16714},
+      {"name": "MergeEdge", "size": 1743}
+     ]
+    },
+    {
+     "name": "graph",
+     "group": [
+      {"name": "BetweennessCentrality", "size": 333534},
+      {"name": "LinkDistance", "size": 5731},
+      {"name": "MaxFlowMinCut", "size": 7840},
+      {"name": "ShortestPaths", "size": 5914},
+      {"name": "SpanningTree", "size": 3416}
+     ]
+    },
+    {
+     "name": "graph2",
+     "group": [
+      {"name": "BetweennessCentrality", "size": 3534},
+      {"name": "LinkDistance", "size": 5731},
+      {"name": "MaxFlowMinCut", "size": 77840},
+      {"name": "ShortestPaths", "size": 5914},
+      {"name": "SpanningTree", "size": 3416}
+     ]
+    },
+    {
+     "name": "optimization",
+     "group": [
+      {"name": "AspectRatioBanker", "size": 7074}
+     ]
+    }
+   ]
+  },
+  {
    "name": "data",
    "group": [
     {
