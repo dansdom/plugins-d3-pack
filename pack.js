@@ -232,7 +232,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .text(function(d) { return d.className.substring(0, d.r / 3); });
             }
             // pack chart update - nested data
-            // #### AT THE MOMENT THIS IS JUST THE BUILDER FUNCTION ####
             else if (container.opts.chartType == 'pack') {
                 // go in and select the nodes
                 container.node = container.chart.datum(data).selectAll(".node")
@@ -310,33 +309,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .attr("dy", ".3em")
                     .transition()
                     .delay(3000)
-                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); })
-                    
-                    
-                    
-                    
-                    
-
-
-                /*
-                container.node.append("title")
-                    .text(function(d) {
-                        if (d.children) {
-                            return d[container.opts.dataStructure.name];
-                        }
-                        else {
-                            return d[container.opts.dataStructure.name] + ": " + container.format(d.size);
-                        }
-                    });
-
-                container.node.append("circle")
-                    .attr("r", function(d) { return d.r; });
-
-                container.node.filter(function(d) { return !d.children; }).append("text")
-                    .attr("dy", ".3em")
-                    .style("text-anchor", "middle")
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
-                */
+                    
             }
 
         },
