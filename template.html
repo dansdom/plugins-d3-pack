@@ -12,8 +12,10 @@
     <button onclick="updateChartB()">Data 2</button>
     <button onclick="updateChartC()">Data 3</button>
     <button onclick="updateChartD()">Data 4</button>
-    <div id="chart1"></div>
+    <button onclick="reset()">Reset Chart</button>
     <div id="chart2"></div>
+    <div id="chart1"></div>
+    
     <div id="chart3"></div>
     <script type="text/javascript">
 
@@ -31,7 +33,7 @@
       });
 
       d3.pack(chart2, {
-        'diameter': 500,
+        'diameter': 1000,
         'padding': 2,
         'dataUrl' : 'flare.json',
         'dataType' : 'json',
@@ -61,6 +63,10 @@
       function updateChartD() {
         d3.pack(chart2, "updateData", "flare4.json");
       };
+
+      function reset() {
+        d3.pack(chart2, "resetChart");
+      }
       
 
     </script>

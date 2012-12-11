@@ -11,3 +11,9 @@ Wish List:
 1. rotate chart?
 2. drag rotate?
 3. drag items around to re-arrange the chart? Implement some kind of 'force' onto these items 
+
+Notes: when data sets change then node binding may change on nodes that still exist. I have to do some kind of unbind if I don't want the events anymore.
+
+After lunch:
+1. hover states for the 'pack' parents
+2. event binding/unbinding

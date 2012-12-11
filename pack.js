@@ -36,6 +36,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         // instead of defining a color array, I will set a color scale and then let the user overwrite it
         'colorRange' : [],
         'chartType' : 'pack',
+        'fontSize' : 12,
         // defines the data structure of the document
         'dataStructure' : {
             'name' : 'name',
@@ -105,13 +106,14 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.data = data;
 
-            // resets the charts position
-            container.chart.on("click", function() {
-                container.resetChart();
-            });
 
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
+
+                // resets the charts position. Only for the bubble type
+                container.chart.on("click", function() {
+                    container.resetChart();
+                });
 
                 // define the data set and then append the g nodes for the data
                 container.node = container.chart.selectAll(".node")
@@ -135,6 +137,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.node.append("text")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
+                    .style("font-size", container.opts.fontSize + "px")
                     .text(function(d) { return d.className.substring(0, d.r / 4); });
             }
             // if type = Pack (i.e. deep representation)
@@ -153,7 +156,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         else {
                             return "leaf node";
                         } 
-                    })
+                    });
+
+                // only put zoom event on nodes that are parents
+                container.node.filter(function(d) { return d.children; })
                     .on("click", function(d) { container.zoom(d); });
 
                 // for each node add the title    
@@ -171,11 +177,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.node.append("circle")
                     .attr("r", function(d) { return d.r; });
 
-
                 // add the text node for each data point and cut it depending on the size of the node
                 container.node.filter(function(d) { return !d.children; }).append("text")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
+                    .style("font-size", container.opts.fontSize + "px")
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
             }
 
@@ -246,6 +252,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 newNodes
                     .append("text")
                     .style("text-anchor", "middle")
+                    .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
                     .transition()
                     .delay(3000)
@@ -316,6 +323,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                             return "leaf node";
                         } 
                     })
+
+                // only put zoom event on nodes that are parents
+                newNodes.filter(function(d) { return d.children; })
                     .on("click", function(d) { container.zoom(d); });
 
                 newNodes.append("circle")
@@ -327,6 +337,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 newNodes.filter(function(d) { return !d.children; })
                     .append("text")
                     .style("text-anchor", "middle")
+                    .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
                     .transition()
                     .delay(3000)
@@ -339,28 +350,72 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             var container = this,
                 scaleFactor = (container.diameter) / d.r / 2,
-                chart = container.chart.selectAll("g").transition().duration(2000),
+                chart = container.chart.selectAll("g"),
+                text,
                 leftPos = (d.x - d.r),
                 topPos = -(d.y - d.r);
 
-            chart.attr("transform", function(d) { 
+            // if it's a 'pack' chart, then filter text nodes
+            if (container.opts.chartType == 'bubble') {
+                text = chart.selectAll("text")
+                    //.style("font-size", "0px")
+                    .transition().delay(2000)
+                    .text(function(d) { return d.className.substring(0, (d.r * scaleFactor) / 3); })
+                    .style("font-size", container.opts.fontSize/scaleFactor + "px")
+
+            }
+            else if (container.opts.chartType == 'pack') {
+                text = chart.selectAll("text")
+                    .filter(function(d) { return !d.children; })
+                    //.style("font-size", "0px")
+                    .transition().delay(2000)
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, (d.r * scaleFactor) / 4); })
+                    .style("font-size", container.opts.fontSize/scaleFactor + "px")
+            }
+
+            // transform each of the nodes
+            chart
+                .transition().duration(2000)
+                .attr("transform", function(d) { 
                 return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
             });
 
+           
             // stops the propagation of the event
             d3.event.stopPropagation();
         },
         // resets the zoom on the chart
         resetChart : function() {
             var container = this,
-                chart = container.chart.selectAll("g").transition().duration(2000);
+                text,
+                chart = container.chart.selectAll("g");
 
-            chart.attr("transform", function(d) { 
+            chart
+                .transition().duration(2000)
+                .attr("transform", function(d) { 
                 return "scale(1) translate(" + d.x + "," + d.y + ")";
             });
 
+            // if it's a 'pack' chart, then filter text nodes
+            if (container.opts.chartType == 'bubble') {
+                text = chart.selectAll("text")
+                    .transition().delay(2000)
+                    .text(function(d) { return d.className.substring(0, d.r / 3); })
+                    .style("font-size", container.opts.fontSize + "px")
+
+            }
+            else if (container.opts.chartType == 'pack') {
+                text = chart.selectAll("text")
+                    .filter(function(d) { return !d.children; })
+                    .transition().delay(2000)
+                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); })
+                    .style("font-size", container.opts.fontSize + "px")
+            }
+
             // stops the propagation of the event
-            d3.event.stopPropagation();
+            if (d3.event) {
+                d3.event.stopPropagation();
+            }
         },
         // Returns a flattened hierarchy containing all leaf nodes under the root.
         parseData : function(data) {
