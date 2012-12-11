@@ -79,6 +79,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .sort(null)
                 .size([container.diameter, container.diameter])
                 .padding(container.opts.padding);
+                
 
             // create the svg element that holds the chart
             container.chart = d3.select(container.el).append("svg")
@@ -104,6 +105,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             container.data = data;
 
+            // resets the charts position
+            container.chart.on("click", function() {
+                container.resetChart();
+            });
 
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
@@ -114,7 +119,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         .filter(function(d) { return !d.children; }))
                   .enter().append("g")
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-                    .attr("class", "node");
+                    .attr("class", "node")
+                    .on("click", function(d) { container.zoom(d); });
                     
                 // add the title nodes for each data point
                 container.node.append("title")
@@ -123,11 +129,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // add the circles for each data point. Color is dependent on the class name of the package
                 container.node.append("circle")
                     .attr("r", function(d) { return d.r; })
-                    .style("fill", function(d) { return container.color(d.packageName); })
-                    // add event handling for the circles
-                    .on("click", function() {
-                        container.zoom(d);
-                    });
+                    .style("fill", function(d) { return container.color(d.packageName); });
 
                 // add the text node for each data point and cut it depending on the size of the node
                 container.node.append("text")
@@ -151,7 +153,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         else {
                             return "leaf node";
                         } 
-                    });
+                    })
+                    .on("click", function(d) { container.zoom(d); });
 
                 // for each node add the title    
                 container.node.append("title")
@@ -166,10 +169,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 // add a circle for each data point
                 container.node.append("circle")
-                    .attr("r", function(d) { return d.r; })
-                    .on("click", function(d) {
-                        container.zoom(d);
-                    });
+                    .attr("r", function(d) { return d.r; });
+
 
                 // add the text node for each data point and cut it depending on the size of the node
                 container.node.filter(function(d) { return !d.children; }).append("text")
@@ -226,7 +227,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 var newNodes = container.node.enter()
                     .append("g")
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-                    .attr("class", "node");
+                    .attr("class", "node")
+                    .on("click", function(d) { container.zoom(d); });
                     
                 // for the new nodes add the4 title for them
                 newNodes.append("title")
@@ -313,7 +315,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         else {
                             return "leaf node";
                         } 
-                    });
+                    })
+                    .on("click", function(d) { container.zoom(d); });
 
                 newNodes.append("circle")
                     .attr("r", 0)
@@ -335,13 +338,25 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         zoom : function(d, i) {
 
             var container = this,
-                scaleFactor = (container.diameter - 5) / d.r / 2,
+                scaleFactor = (container.diameter) / d.r / 2,
                 chart = container.chart.selectAll("g").transition().duration(2000),
                 leftPos = (d.x - d.r),
                 topPos = -(d.y - d.r);
 
             chart.attr("transform", function(d) { 
                 return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
+            });
+
+            // stops the propagation of the event
+            d3.event.stopPropagation();
+        },
+        // resets the zoom on the chart
+        resetChart : function() {
+            var container = this,
+                chart = container.chart.selectAll("g").transition().duration(2000);
+
+            chart.attr("transform", function(d) { 
+                return "scale(1) translate(" + d.x + "," + d.y + ")";
             });
 
             // stops the propagation of the event
