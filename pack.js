@@ -42,7 +42,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             'name' : 'name',
             'children' : 'group',
             'value' : 'size'
-        }
+        },
+        'speed' : 1500  // speed of the trasitions
     };
     
     // plugin functions go here
@@ -151,16 +152,22 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", function(d) {
                         if (d.children) {
-                            return "node";
+                            return "group node";
                         }
                         else {
                             return "leaf node";
                         } 
                     });
 
+                // ignore events on the nodes without children
+                container.node.filter(function(d) { return !d.children; })
+                    .style("pointer-events", "none");
+
                 // only put zoom event on nodes that are parents
+                // enable pointer events
                 container.node.filter(function(d) { return d.children; })
-                    .on("click", function(d) { container.zoom(d); });
+                    .on("click", function(d) { container.zoom(d); })
+                    .style("pointer-events", null);
 
                 // for each node add the title    
                 container.node.append("title")
@@ -184,11 +191,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("font-size", container.opts.fontSize + "px")
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
             }
-
-            // if the window is clicked then the chart will reset to the initial zoom
-            //d3.select(window).on("click", function() {
-            //    container.zoom(initialDataSet);
-            //});
             
         },
         updateChart : function(data) {
@@ -206,26 +208,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     
                 // set the transition of the existing nodes
                 container.node.transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 
                 // for existing nodes, select the circle and do the transition for them
                 container.node.select("circle")
                 .transition()
-                .duration(3000)
+                .duration(container.opts.speed)
                     .attr("r", function(d) { return d.r; })
                     .style("fill", function(d) { return container.color(d.packageName); }); 
 
                 // for existing nodes, select the text and then transition them in
                 container.node.select("text")
                     .transition()
-                    .delay(1500)
+                    .delay(container.opts.speed/2)
+                    .style("font-size", container.opts.fontSize + "px")
                     .text(function(d) { return d.className.substring(0, d.r / 4); }); 
                 
                 // define the old nodes that don't exist and then fade them out  
                 var oldNodes = container.node.exit()
                     .transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .style("fill-opacity", 1e-6)
                     .remove();
                 
@@ -242,11 +245,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 // for the new nodes, append the circles and then fade them in
                 newNodes.append("circle")
-                        .attr("r", 0)
-                        .transition()
-                        .duration(3000)
-                        .attr("r", function(d) { return d.r; })
-                        .style("fill", function(d) { return container.color(d.packageName); });
+                    .attr("r", 0)
+                    .transition()
+                    .duration(container.opts.speed)
+                    .attr("r", function(d) { return d.r; })
+                    .style("fill", function(d) { return container.color(d.packageName); });
 
                 // for the new nodes, append the text and them shorten it after the delay that equals the transition
                 newNodes
@@ -255,8 +258,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
                     .transition()
-                    .delay(3000)
-                    .text(function(d) { return d.className.substring(0, d.r / 3); });
+                    .delay(container.opts.speed)
+                    .text(function(d) { return d.className.substring(0, d.r / 4); });
             }
             // pack chart update - nested data
             else if (container.opts.chartType == 'pack') {
@@ -266,19 +269,29 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 // set the transition of the existing nodes
                 container.node.transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", function(d) {
                         if (d.children) {
-                            return "node";
+                            return "group node";
                         }
                         else {
                             return "leaf node";
                         } 
                     });
+
+                // ignore events on the nodes without children
+                container.node.filter(function(d) { return !d.children; })
+                    .style("pointer-events", "none");
+
+                // only put zoom event on nodes that are parents
+                // enable pointer events
+                container.node.filter(function(d) { return d.children; })
+                    .on("click", function(d) { container.zoom(d); })
+                    .style("pointer-events", null);
                     
                 container.node.select("circle").transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .attr("r", function(d) { return d.r; });
 
 
@@ -287,7 +300,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
                     .transition()
-                    .delay(3000)
+                    .delay(container.opts.speed)
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
 
                 // define the old nodes that don't exist and then fade them out  
@@ -295,29 +308,29 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
                 oldNodes.select("circle")
                     .transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .style("fill-opacity", 1e-6)
                     .style("stroke-opacity", 1e-6)
                     .remove();
 
                 oldNodes.select("title")
                     .transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .remove();
 
                 oldNodes.select("text")
                     .transition()
-                    .duration(1000)
+                    .duration(container.opts.speed/3)
                     .remove();
 
-                oldNodes.transition().duration(3000).remove();
+                oldNodes.transition().duration(container.opts.speed).remove();
 
                 var newNodes = container.node.enter()
                     .append("g")
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
                     .attr("class", function(d) {
                         if (d.children) {
-                            return "node";
+                            return "group node";
                         }
                         else {
                             return "leaf node";
@@ -331,7 +344,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 newNodes.append("circle")
                     .attr("r", 0)
                     .transition()
-                    .duration(3000)
+                    .duration(container.opts.speed)
                     .attr("r", function(d) { return d.r; });
 
                 newNodes.filter(function(d) { return !d.children; })
@@ -340,8 +353,18 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
                     .transition()
-                    .delay(3000)
+                    .delay(container.opts.speed)
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); });
+
+                // ignore events on the nodes without children
+                newNodes.filter(function(d) { return !d.children; })
+                    .style("pointer-events", "none");
+
+                // only put zoom event on nodes that are parents
+                // enable pointer events
+                newNodes.filter(function(d) { return d.children; })
+                    .on("click", function(d) { container.zoom(d); })
+                    .style("pointer-events", null);
                     
             }
 
@@ -355,27 +378,35 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 leftPos = (d.x - d.r),
                 topPos = -(d.y - d.r);
 
+            chart.select("text").remove();                
+
             // if it's a 'pack' chart, then filter text nodes
             if (container.opts.chartType == 'bubble') {
-                text = chart.selectAll("text")
-                    //.style("font-size", "0px")
-                    .transition().delay(2000)
-                    .text(function(d) { return d.className.substring(0, (d.r * scaleFactor) / 3); })
-                    .style("font-size", container.opts.fontSize/scaleFactor + "px")
+                text = chart
+                    .append("text")
+                    .style("font-size", "0px")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition().delay(container.opts.speed).duration(100)
+                    .text(function(d) { return d.className.substring(0, (d.r * scaleFactor) / 4); })
+                    .style("font-size", container.opts.fontSize/scaleFactor + "px");
 
             }
             else if (container.opts.chartType == 'pack') {
-                text = chart.selectAll("text")
+                text = chart
                     .filter(function(d) { return !d.children; })
-                    //.style("font-size", "0px")
-                    .transition().delay(2000)
+                    .append("text")
+                    .style("font-size", "0px")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition().delay(container.opts.speed).duration(100)
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, (d.r * scaleFactor) / 4); })
-                    .style("font-size", container.opts.fontSize/scaleFactor + "px")
+                    .style("font-size", container.opts.fontSize/scaleFactor + "px");
             }
 
             // transform each of the nodes
             chart
-                .transition().duration(2000)
+                .transition().duration(container.opts.speed)
                 .attr("transform", function(d) { 
                 return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
             });
@@ -391,23 +422,33 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 chart = container.chart.selectAll("g");
 
             chart
-                .transition().duration(2000)
+                .transition().duration(container.opts.speed)
                 .attr("transform", function(d) { 
                 return "scale(1) translate(" + d.x + "," + d.y + ")";
             });
 
+            chart.select("text").remove();
+
             // if it's a 'pack' chart, then filter text nodes
             if (container.opts.chartType == 'bubble') {
-                text = chart.selectAll("text")
-                    .transition().delay(2000)
-                    .text(function(d) { return d.className.substring(0, d.r / 3); })
+                text = chart
+                    .append("text")
+                    .style("font-size", "0px")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition().delay(container.opts.speed).duration(100)
+                    .text(function(d) { return d.className.substring(0, d.r / 4); })
                     .style("font-size", container.opts.fontSize + "px")
 
             }
             else if (container.opts.chartType == 'pack') {
-                text = chart.selectAll("text")
+                text = chart
                     .filter(function(d) { return !d.children; })
-                    .transition().delay(2000)
+                    .append("text")
+                    .style("font-size", "0px")
+                    .style("text-anchor", "middle")
+                    .attr("dy", ".3em")
+                    .transition().delay(container.opts.speed).duration(100)
                     .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); })
                     .style("font-size", container.opts.fontSize + "px")
             }
