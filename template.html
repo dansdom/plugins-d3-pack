@@ -68,8 +68,7 @@
           'padding': 0,
           'dataUrl' : 'flare2.json',
           'dataType' : 'json',
-          'chartType' : 'pack',
-          'colorRange' : [d3.rgb(240, 150, 60), d3.rgb(70, 180, 190), d3.rgb(100, 20, 30), d3.rgb(40, 150, 60), d3.rgb(70, 180, 190), d3.rgb(140, 150, 60), d3.rgb(40, 150, 160), d3.rgb(240, 150, 60)]
+          'chartType' : 'pack'
         });
         function updateChart2A() {
           d3.pack(chart2, "updateData", "flare.json");
@@ -107,11 +106,10 @@
         var chart3 = document.getElementById("chart3");
         d3.pack(chart3, {
           'diameter': 400,
-          'padding': 1,
+          'padding': 5,
           'dataUrl' : 'flare.json',
           'dataType' : 'json',
-          'chartType' : 'bubble',
-          'colorRange' : [d3.rgb(240, 150, 60), d3.rgb(70, 180, 190), d3.rgb(100, 20, 30), d3.rgb(40, 150, 60), d3.rgb(70, 180, 190), d3.rgb(140, 150, 60), d3.rgb(40, 150, 160), d3.rgb(240, 150, 60)]
+          'chartType' : 'bubble'
         });
         function updateChart3A() {
           d3.pack(chart3, "updateData", "flare.json");

@@ -40,8 +40,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         // defines the data structure of the document
         'dataStructure' : {
             'name' : 'name',
-            'children' : 'group',
-            'value' : 'size'
+            'value' : 'size',
+            'children' : 'group'
         },
         'speed' : 1500  // speed of the trasitions
     };
@@ -53,7 +53,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
             // define the size of the chart
             container.diameter = this.opts.diameter;
-            // set the scale for the chart
+            // set the scale for the chart - I may or may not actually use this scale
             container.scaleX = d3.scale.linear().range([0, container.diameter]);
             container.scaleY = d3.scale.linear().range([0, container.diameter]);
             // define the data format - not 100% sure what this does. will need to research this attribute
@@ -82,7 +82,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .size([container.diameter, container.diameter])
                 .padding(container.opts.padding);
                 
-
             // create the svg element that holds the chart
             container.chart = d3.select(container.el).append("svg")
                 .attr("width", container.diameter)
@@ -106,7 +105,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 initialDataSet = data;
 
             container.data = data;
-
 
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
@@ -241,7 +239,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     
                 // for the new nodes add the4 title for them
                 newNodes.append("title")
-                        .text(function(d) { return d.className + ": " + container.format(d.value); });
+                    .text(function(d) { return d.className + ": " + container.format(d.value); });
 
                 // for the new nodes, append the circles and then fade them in
                 newNodes.append("circle")
@@ -252,8 +250,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("fill", function(d) { return container.color(d.packageName); });
 
                 // for the new nodes, append the text and them shorten it after the delay that equals the transition
-                newNodes
-                    .append("text")
+                newNodes.append("text")
                     .style("text-anchor", "middle")
                     .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
@@ -294,7 +291,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .duration(container.opts.speed)
                     .attr("r", function(d) { return d.r; });
 
-
+                // start fresh with the text nodes
                 container.node.select("text").remove();
                 container.node.filter(function(d) { return !d.children; }).append("text")
                     .attr("dy", ".3em")
@@ -323,7 +320,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .duration(container.opts.speed/3)
                     .remove();
 
-                oldNodes.transition().duration(container.opts.speed).remove();
+                oldNodes
+                    .transition().duration(container.opts.speed)
+                    .remove();
 
                 var newNodes = container.node.enter()
                     .append("g")
@@ -335,7 +334,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         else {
                             return "leaf node";
                         } 
-                    })
+                    });
 
                 // only put zoom event on nodes that are parents
                 newNodes.filter(function(d) { return d.children; })
@@ -364,10 +363,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // enable pointer events
                 newNodes.filter(function(d) { return d.children; })
                     .on("click", function(d) { container.zoom(d); })
-                    .style("pointer-events", null);
-                    
+                    .style("pointer-events", null);     
             }
-
         },
         zoom : function(d, i) {
 
@@ -390,7 +387,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .transition().delay(container.opts.speed).duration(100)
                     .text(function(d) { return d.className.substring(0, (d.r * scaleFactor) / 4); })
                     .style("font-size", container.opts.fontSize/scaleFactor + "px");
-
             }
             else if (container.opts.chartType == 'pack') {
                 text = chart
@@ -408,10 +404,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             chart
                 .transition().duration(container.opts.speed)
                 .attr("transform", function(d) { 
-                return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
-            });
+                    return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
+                });
 
-           
             // stops the propagation of the event
             d3.event.stopPropagation();
         },
@@ -427,7 +422,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 return "scale(1) translate(" + d.x + "," + d.y + ")";
             });
 
-            chart.select("text").remove();
+            chart
+                .select("text")
+                .remove();
 
             // if it's a 'pack' chart, then filter text nodes
             if (container.opts.chartType == 'bubble') {
@@ -437,19 +434,25 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
                     .transition().delay(container.opts.speed).duration(100)
-                    .text(function(d) { return d.className.substring(0, d.r / 4); })
+                    .text(function(d) {
+                        return d.className.substring(0, d.r / 4);
+                    })
                     .style("font-size", container.opts.fontSize + "px")
 
             }
             else if (container.opts.chartType == 'pack') {
                 text = chart
-                    .filter(function(d) { return !d.children; })
+                    .filter(function(d) {
+                        return !d.children;
+                    })
                     .append("text")
                     .style("font-size", "0px")
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
                     .transition().delay(container.opts.speed).duration(100)
-                    .text(function(d) { return d[container.opts.dataStructure.name].substring(0, d.r / 4); })
+                    .text(function(d) {
+                        return d[container.opts.dataStructure.name].substring(0, d.r / 4);
+                    })
                     .style("font-size", container.opts.fontSize + "px")
             }
 
