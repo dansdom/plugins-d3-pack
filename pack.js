@@ -41,7 +41,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'dataStructure' : {
             'name' : 'name',
             'value' : 'size',
-            'parent' : 'group'
+            'children' : 'group'
         },
         'speed' : 1500  // speed of the trasitions
     };
@@ -113,7 +113,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // custom size function as passed into the options object
                 .value(function(d) { return d[container.opts.dataStructure.value]})
                 // custom children function as passed into the options object
-                .children(function(d) { return d[container.opts.dataStructure.parent]})
+                .children(function(d) { return d[container.opts.dataStructure.children]})
                 .padding(container.opts.padding);
 
             // this is the layout for the bubble pack i.e. flat chart
@@ -413,7 +413,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         parseData : function(data) {
            
             var dataList = [],
-                children = this.opts.dataStructure.parent,  // parent label for children
+                children = this.opts.dataStructure.children,  // parent label for children
                 container = this;
         
             // recursively loop through each child of the object
