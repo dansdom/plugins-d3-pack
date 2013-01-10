@@ -28,16 +28,19 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
     
     // these are the plugin default settings that will be over-written by user settings
     d3.Pack.settings = {
+        'height' : 800,
+        'width' : 800,
         'diameter': 500,
-        'padding': 2,
+        'padding': 20,
+        'spacing' : 0,
         'data' : null,  // I'll need to figure out how I want to present data options to the user
         'dataUrl' : 'flare.json',  // this is a url for a resource
         'dataType' : 'json',
         // instead of defining a color array, I will set a color scale and then let the user overwrite it
         'colorRange' : [],
         'colors' : {
-            'group' : 'blue',
-            'leaf' : 'green',
+            'group' : '#1f77b4',
+            'leaf' : '#ff7f0e',
             'label' : 'black'
         },
         'opacity' : 0.2,
@@ -49,6 +52,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             'value' : 'size',
             'children' : 'group'
         },
+        'chartName' : null,
         'speed' : 1500  // speed of the trasitions
     };
     
@@ -78,6 +82,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             // set the layout of the chart
             this.setLayout();
+            // set the chart title
+            this.setTitle();
+
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
                 // resets the charts position. Only for the bubble type
@@ -124,6 +131,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         setLayout : function() {
             var container = this;
 
+            console.log(this.opts);
+
             // DEFINE EACH OF THE TWO TYPES OF LAYOUTS
             // this is the layout for the regular pack i.e. layered chart
             if (!container.pack) {
@@ -135,7 +144,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .value(function(d) { return d[container.opts.dataStructure.value]})
                 // custom children function as passed into the options object
                 .children(function(d) { return d[container.opts.dataStructure.children]})
-                .padding(container.opts.padding);
+                .padding(container.opts.spacing);
 
             // this is the layout for the bubble pack i.e. flat chart
             if (!container.bubble) {
@@ -144,17 +153,31 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             }
             container.bubble
                 .size([this.opts.diameter, this.opts.diameter])
-                .padding(container.opts.padding);
+                .padding(container.opts.spacing);
                 
             // create the svg element that holds the chart
             if (!container.chart) {
                 container.chart = d3.select(container.el).append("svg");
             }
             container.chart
-                .attr("width", this.opts.diameter)
-                .attr("height", this.opts.diameter)
+                .attr("width", this.opts.width)
+                .attr("height", this.opts.height)
                 .attr("class", container.opts.chartType);
 
+        },
+        setTitle : function() {
+            var container = this;
+
+            // ####### CHART TITLE #######
+            if (container.opts.chartName) {
+                if (!container.chartName) {
+                    container.chartName = container.chart.append("g")
+                        .attr("class", "chartName")
+                        .append("text");
+                }
+                container.chartName = container.chart.select(".chartName").select("text")
+                    .text(container.opts.chartName);
+            }
         },
         placeCurrentBubbleNodes : function() {
             var container = this;
@@ -168,7 +191,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             container.node
                 .transition()
                 .duration(container.opts.speed)
-                .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+                .attr("transform", function(d) { return "translate(" + (d.x + (container.opts.width - container.opts.diameter)/2) + "," + (d.y + (container.opts.height - container.opts.diameter)/2) + ")"; });
 
             // for existing nodes, select the circle and do the transition for them
             container.node.select("circle")
@@ -199,7 +222,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 // define the new nodes and then move them into the correct place
                 newNodes = container.node.enter()
                     .append("g")
-                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("transform", function(d) { return "translate(" + (d.x + (container.opts.width - container.opts.diameter)/2) + "," + (d.y + (container.opts.height - container.opts.diameter)/2) + ")"; })
                     .attr("class", "node")
                     .on("click", function(d) { container.zoom(d); });
                     
@@ -234,7 +257,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // set the transition of the existing nodes
             container.node.transition()
                 .duration(container.opts.speed)
-                .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                .attr("transform", function(d) { return "translate(" + (d.x + (container.opts.width - container.opts.diameter)/2) + "," + (d.y + (container.opts.height - container.opts.diameter)/2) + ")"; })
                 .attr("class", function(d) {
                     if (d.children) {
                         return "group node";
@@ -297,7 +320,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this,
                 newNodes = container.node.enter()
                     .append("g")
-                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("transform", function(d) { return "translate(" + (d.x + (container.opts.width - container.opts.diameter)/2) + "," + (d.y + (container.opts.height - container.opts.diameter)/2) + ")"; })
                     .attr("class", function(d) {
                         if (d.children) {
                             return "group node";
@@ -339,6 +362,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         zoom : function(d, i) {
             var container = this,
                 scaleFactor = (this.opts.diameter) / d.r / 2,
+                centerAdjustment = {
+                    x : ((this.opts.width - this.opts.diameter)/2) / scaleFactor,
+                    y : ((this.opts.height - this.opts.diameter)/2) / scaleFactor
+                },
                 chart = container.chart.selectAll("g"),
                 text,
                 leftPos = (d.x - d.r),
@@ -369,11 +396,13 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("font-size", container.opts.fontSize/scaleFactor + "px");
             }
 
+            console.log(centerAdjustment);
+
             // transform each of the nodes
             chart
                 .transition().duration(container.opts.speed)
                 .attr("transform", function(d) { 
-                    return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos) + "," + (d.y + topPos) + ")";
+                    return "scale(" + scaleFactor + ") translate(" + (d.x - leftPos + centerAdjustment.x) + "," + (d.y + topPos + centerAdjustment.y) + ")";
                 });
 
             // stops the propagation of the event
