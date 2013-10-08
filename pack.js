@@ -20,9 +20,9 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         this.opts = Extend(true, {}, d3.Pack.settings, options);
         this.init();
         // run the callback function if it is defined
-        if (typeof callback === "function")
-        {
-            callback.call();
+        if (typeof callback === "function") {
+            var chart = this;
+            callback.call(this, chart);
         }
     };
     
@@ -43,6 +43,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             'group' : '#1f77b4',
             'leaf' : '#ff7f0e',
             'label' : 'black'
+        },
+        // define weather to show just the fill or the stroke, or both of them. The value here is the opacity of each element
+        'elements' : {
+            'fill' : 1,
+            'stroke' : 1
         },
         'opacity' : 0.2,
         'chartType' : 'pack',
@@ -65,8 +70,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // set the scale for the chart - I may or may not actually use this scale
             container.scaleX = d3.scale.linear().range([0, this.opts.diameter]);
             container.scaleY = d3.scale.linear().range([0, this.opts.diameter]);
-            // define the data format - not 100% sure what this does. will need to research this attribute
-            container.format = d3.format(",d");
+            // formatting to zero decimal places
+            container.format = d3.format(".0f");
             
             this.getData();
         },
@@ -154,12 +159,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .attr("width", this.opts.width)
                 .attr("height", this.opts.height)
                 .attr("class", container.opts.chartType);
-
         },
         setTitle : function() {
             var container = this;
 
-            // ####### CHART TITLE #######
             if (container.opts.chartName) {
                 if (!container.chartName) {
                     container.chartName = container.chart.append("g")
@@ -175,7 +178,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             // go in and select the nodes
                 container.node = container.chart.selectAll(".node")
-                    .data(container.bubble.nodes(container.parseData(container.data))
+                    .data(container.bubble.nodes(container.data)
                         .filter(function(d) { return !d.children; }));
                     
             // set the transition of the existing nodes
@@ -189,7 +192,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .transition()
                 .duration(container.opts.speed)
                 .attr("r", function(d) { return d.r; })
-                .style("fill", function(d) { return container.color(d.packageName); }); 
+                .style("stroke", function(d) { return container.color(d.packageName); })
+                .style("stroke-opacity", container.opts.elements.stroke)
+                .style("fill", function(d) { return container.color(d.packageName); })
+                .style("fill-opacity" , container.opts.elements.fill); 
 
             container.node.select("title")
                 .text(function(d) { return d.className + ": " + container.format(d.value); });
@@ -236,7 +242,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .transition()
                 .duration(container.opts.speed)
                 .attr("r", function(d) { return d.r; })
-                .style("fill", function(d) { return container.color(d.packageName); });
+                .style("stroke", function(d) { return container.color(d.packageName); })
+                .style("stroke-opacity", container.opts.elements.stroke)
+                .style("fill", function(d) { return container.color(d.packageName); })
+                .style("fill-opacity" , container.opts.elements.fill); 
 
             // for the new nodes, append the text and them shorten it after the delay that equals the transition
             // test to see if the labelPosition set
@@ -390,7 +399,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             chart.select("text").remove();                
 
             // if it's a 'pack' chart, then filter text nodes
-            if (container.opts.chartType == 'bubble') {
+            if (container.opts.chartType == 'bubble' && container.opts.labelPostion) {
                 text = chart
                     .append("text")
                     .style("font-size", "0px")
@@ -400,7 +409,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .text(function(d) { return d.className.substring(0, (d.r * scaleFactor) / 4); })
                     .style("font-size", container.opts.fontSize/scaleFactor + "px");
             }
-            else if (container.opts.chartType == 'pack') {
+            else if (container.opts.chartType == 'pack' && container.opts.labelPostion) {
                 text = chart
                     .filter(function(d) { return !d.children; })
                     .append("text")
@@ -441,7 +450,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .remove();
 
             // if it's a 'pack' chart, then filter text nodes
-            if (container.opts.chartType == 'bubble') {
+            if (container.opts.chartType == 'bubble' && container.opts.labelPostion) {
                 text = chart
                     .append("text")
                     .style("font-size", "0px")
@@ -454,7 +463,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .style("font-size", container.opts.fontSize + "px")
 
             }
-            else if (container.opts.chartType == 'pack') {
+            else if (container.opts.chartType == 'pack' && container.opts.labelPostion) {
                 text = chart
                     .filter(function(d) {
                         return !d.children;
@@ -492,15 +501,19 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 }
             };
 
-            recurse(null, data);
-            return {children: dataList};  
+            // if the chart is bubble then flatten the data
+            if (container.opts.chartType === 'bubble') {
+                recurse(null, data);
+                data = {children: dataList};  
+            }
+            return data;
         },
         // updates the data set for the chart
         updateData : function(url, type) {
             var container = this;
 
             d3.json(url, function(error, data) {
-                container.data = data;
+                container.data = container.parseData(data);
                 container.updateChart();
             });
         },
@@ -510,12 +523,12 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             // need to test if the data is provided or I have to make a requset first
             if (container.opts.data) {
-                container.data = container.opts.data;
+                container.data = container.parseData(container.opts.data);
                 container.updateChart();
             }
             else {
                 d3.json(this.opts.dataUrl, function(error, data) {
-                    container.data = data;
+                    container.data = container.parseData(data);
                     // build the chart
                     container.updateChart();
                 });
