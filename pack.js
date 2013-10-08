@@ -289,12 +289,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             container.node.filter(function(d) { return d.children; })
                 .on("click", function(d) { container.zoom(d); })
                 .style("pointer-events", null);
+
+            /*
+            .style("stroke", function(d) { return container.color(d.packageName); })
+                .style("stroke-opacity", container.opts.elements.stroke)
+                .style("fill", function(d) { return container.color(d.packageName); })
+                .style("fill-opacity" , container.opts.elements.fill); 
+            */
                     
             container.node.select("circle").transition()
                 .duration(container.opts.speed)
                 .style("stroke", function(d) {if (d.children) {return container.opts.colors.group}})
+                .style("stroke-opacity", container.opts.elements.stroke)
                 .style("fill", function(d) {if (d.children) {return container.opts.colors.group} else {return container.opts.colors.leaf}})
-                .style("fill-opacity", function(d) {if (d.children) {return container.opts.opacity}})
+                .style("fill-opacity", function(d) {
+                    if (d.children) {
+                        return container.opts.elements.fill
+                    } else {
+                        // if no children then make it opaque
+                        return 1;
+                    }
+                })
                 .attr("r", function(d) { return d.r; });
 
             // start fresh with the text nodes
@@ -358,8 +373,16 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .transition()
                 .duration(container.opts.speed)
                 .style("stroke", function(d) {if (d.children) {return container.opts.colors.group}})
+                .style("stroke-opacity", container.opts.elements.stroke)
                 .style("fill", function(d) {if (d.children) {return container.opts.colors.group} else {return container.opts.colors.leaf}})
-                .style("fill-opacity", function(d) {if (d.children) {return container.opts.opacity}})
+                .style("fill-opacity", function(d) {
+                    if (d.children) {
+                        return container.opts.elements.fill
+                    } else {
+                        // if no children then make it opaque
+                        return 1;
+                    }
+                })
                 .attr("r", function(d) { return d.r; });
 
             // check to see if the labelPosition is set before placing text
