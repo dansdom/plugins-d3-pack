@@ -49,7 +49,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             'fill' : 1,
             'stroke' : 1
         },
-        'opacity' : 0.2,
         'chartType' : 'pack',
         'fontSize' : 12,
         // defines the data structure of the document
@@ -59,6 +58,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             'children' : 'group'
         },
         'chartName' : null,
+        'isZoomable' : true,  // can turn off event handlers for the zoom
         'speed' : 1500  // speed of the trasitions
     };
     
@@ -94,27 +94,37 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // if type = Bubble (i.e. shallow representation), create the bubble svg
             if (container.opts.chartType == 'bubble') {
                 // resets the charts position. Only for the bubble type
-                container.chart
-                    .on("click", function() {
-                        container.resetChart();
-                    });
+                if (container.opts.isZoomable) {
+                    container.chart
+                        .on("click", function() {
+                            container.resetChart();
+                        });
+                }
+                // go in and select the nodes
+                container.node = container.chart.selectAll(".node")
+                    .data(container.bubble.nodes(container.data)
+                        .filter(function(d) { return !d.children; }));
 
+                // place the new nodes
+                this.placeNewBubbleNodes();
                 // place the current nodes
                 this.placeCurrentBubbleNodes();
                 // remove the old nodes
                 this.placeOldBubbleNodes();
-                // place the new nodes
-                this.placeNewBubbleNodes();
+                
                 // make sure the style is right
                 container.chart.selectAll(".node").selectAll("circle")
-                    .style("fill-opacity", 1)
-                    .style("stroke", null)
+                    .style("fill-opacity", container.opts.elements.fill)
+                    .style("stroke-opacity", container.opts.elements.stroke)
 
             }
             // if type = Pack (i.e. deep representation)
             else if (container.opts.chartType == 'pack') {
 
                 // define the data set and then append the g nodes for the data
+                // go in and select the nodes
+                container.node = container.chart.datum(container.data).selectAll(".node")
+                    .data(container.pack.nodes);
                 // add class depending on if the node has children 
                 // place the current nodes
                 this.placeCurrentPackNodes();
@@ -175,12 +185,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         },
         placeCurrentBubbleNodes : function() {
             var container = this;
-
-            // go in and select the nodes
-                container.node = container.chart.selectAll(".node")
-                    .data(container.bubble.nodes(container.data)
-                        .filter(function(d) { return !d.children; }));
-                    
+   
             // set the transition of the existing nodes
             container.node
                 .transition()
@@ -203,7 +208,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // for existing nodes, select the text and then transition them in
             //check if labelPosition is set yet
             if (container.opts.labelPosition) {
-                container.node.select("text")
+                container.node.select(".label")
                     .transition()
                     .delay(container.opts.speed/2)
                     .style("font-size", container.opts.fontSize + "px")
@@ -230,7 +235,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     .append("g")
                     .attr("transform", function(d) { return "translate(" + (d.x + (container.opts.width - container.opts.diameter)/2) + "," + (d.y + (container.opts.height - container.opts.diameter)/2) + ")"; })
                     .attr("class", "node")
-                    .on("click", function(d) { container.zoom(d); });
+
+                if (container.opts.isZoomable) {
+                    newNodes.on("click", function(d) { container.zoom(d); });
+                }
                     
             // for the new nodes add the4 title for them
             newNodes.append("title")
@@ -239,6 +247,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // for the new nodes, append the circles and then fade them in
             newNodes.append("circle")
                 .attr("r", 0)
+                .style("stroke-opacity", 1e-6)
+                .style("fill-opacity", 1e-6)
                 .transition()
                 .duration(container.opts.speed)
                 .attr("r", function(d) { return d.r; })
@@ -251,6 +261,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // test to see if the labelPosition set
             if (container.opts.labelPosition) {
                 newNodes.append("text")
+                    .attr("class", "label")
                     .style("text-anchor", "middle")
                     .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
@@ -261,10 +272,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         },
         placeCurrentPackNodes : function() {
             var container = this;
-
-            // go in and select the nodes
-            container.node = container.chart.datum(container.data).selectAll(".node")
-                .data(container.pack.nodes);
 
             // set the transition of the existing nodes
             container.node.transition()
@@ -289,13 +296,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             container.node.filter(function(d) { return d.children; })
                 .on("click", function(d) { container.zoom(d); })
                 .style("pointer-events", null);
-
-            /*
-            .style("stroke", function(d) { return container.color(d.packageName); })
-                .style("stroke-opacity", container.opts.elements.stroke)
-                .style("fill", function(d) { return container.color(d.packageName); })
-                .style("fill-opacity" , container.opts.elements.fill); 
-            */
                     
             container.node.select("circle").transition()
                 .duration(container.opts.speed)
@@ -317,6 +317,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // check if labelPosition is set before replacing the text
             if (container.opts.labelPosition) {
                 container.node.filter(function(d) { return !d.children; }).append("text")
+                    .attr("class", "label")
                     .attr("dy", ".3em")
                     .style("text-anchor", "middle")
                     .transition()
@@ -365,8 +366,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                     });
 
             // only put zoom event on nodes that are parents
-            newNodes.filter(function(d) { return d.children; })
-                .on("click", function(d) { container.zoom(d); });
+            if (container.opts.isZoomable) {
+                newNodes.filter(function(d) { return d.children; })
+                    .on("click", function(d) { container.zoom(d); });
+            }
 
             newNodes.append("circle")
                 .attr("r", 0)
@@ -389,6 +392,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             if (container.opts.labelPosition) {
                 newNodes.filter(function(d) { return !d.children; })
                     .append("text")
+                    .attr("class", "label")
                     .style("text-anchor", "middle")
                     .style("font-size", container.opts.fontSize + "px")
                     .attr("dy", ".3em")
@@ -403,9 +407,11 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
 
             // only put zoom event on nodes that are parents
             // enable pointer events
-            newNodes.filter(function(d) { return d.children; })
-                .on("click", function(d) { container.zoom(d); })
-                .style("pointer-events", null);     
+            if (container.opts.isZoomable) {
+                newNodes.filter(function(d) { return d.children; })
+                    .on("click", function(d) { container.zoom(d); })
+                    .style("pointer-events", null);
+            }
         },
         zoom : function(d, i) {
             var container = this,
@@ -425,6 +431,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             if (container.opts.chartType == 'bubble' && container.opts.labelPostion) {
                 text = chart
                     .append("text")
+                    .attr("class", "label")
                     .style("font-size", "0px")
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
@@ -436,6 +443,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 text = chart
                     .filter(function(d) { return !d.children; })
                     .append("text")
+                    .attr("class", "label")
                     .style("font-size", "0px")
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
@@ -476,6 +484,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             if (container.opts.chartType == 'bubble' && container.opts.labelPostion) {
                 text = chart
                     .append("text")
+                    .attr("class", "label")
                     .style("font-size", "0px")
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
@@ -492,6 +501,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                         return !d.children;
                     })
                     .append("text")
+                    .attr("class", "label")
                     .style("font-size", "0px")
                     .style("text-anchor", "middle")
                     .attr("dy", ".3em")
@@ -532,13 +542,18 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             return data;
         },
         // updates the data set for the chart
-        updateData : function(url, type) {
+        updateData : function(data, type) {
             var container = this;
 
-            d3.json(url, function(error, data) {
+            if (typeof data === "object") {
                 container.data = container.parseData(data);
                 container.updateChart();
-            });
+            } else if (typeof data === "string") {
+                d3.json(url, function(error, data) {
+                    container.data = container.parseData(data);
+                    container.updateChart();
+                });
+            }
         },
         // gets data from a JSON request
         getData : function() {
